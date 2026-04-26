@@ -246,7 +246,7 @@ Importantly, this finding is consistent with the study's central framework. The 
 
 Overall, the evidence suggests that policy days function as high-information, high-adjustment periods, where the market temporarily deviates from its normal return pattern due to expectation realignment and uncertainty resolution.
 
-![Nifty Heatmap](images/nifty50_20yr_returns.png)
+![Nifty Heatmap](images/nifty5020yr_returns.png)
 
 ## 8.7 Summary of Key Findings
 
