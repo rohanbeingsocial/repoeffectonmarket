@@ -12,6 +12,8 @@ Academic Research Report
 
 2025
 
+Dashboard - https://rohanbeingsocial.github.io/repoeffectonmarket/
+
 # 1\. Introduction
 
 The relationship between central bank monetary policy and equity market performance is one of the most studied topics in financial economics. In India, the Reserve Bank of India (RBI) acts as the apex monetary authority, employing instruments such as the Repo Rate, Reverse Repo Rate, Cash Reserve Ratio (CRR), and Statutory Liquidity Ratio (SLR) to control liquidity, manage inflation, and foster economic growth. Changes in these instruments, particularly the Repo Rate, carry powerful signals to financial markets and the broader economy.
