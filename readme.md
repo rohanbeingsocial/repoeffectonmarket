@@ -10,7 +10,7 @@ and Sectoral Index Behaviour
 
 Academic Research Report
 
-2025
+2026
 
 Dashboard - https://rohanbeingsocial.github.io/repoeffectonmarket/
 
