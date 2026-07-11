@@ -202,9 +202,9 @@ Analysis of the 26 RBI policy events in the event table yields the following obs
 
 ## 8.1 Rate Cut vs. Rate Hike Reactions
 
-The dataset contains 20 rate cut events and 6 rate hike events. On average, rate cuts generate a positive same-day return while rate hikes are associated with a marginally negative same-day response. However, the picture is complicated by the expectation dimension - expected cuts sometimes generate negligible or negative same-day returns (as the cut was already priced in), while surprise hikes generate larger negative reactions.
+The dataset contains 18 rate cut events and 8 rate hike events. On average, same-day reactions do not line up neatly with the direction of the decision: rate cuts average a slightly negative same-day return (approximately -0.31%), largely because many cuts arrived as surprises, while rate hikes average a roughly flat +0.03%. The picture is dominated by the expectation dimension - expected cuts sometimes generate negligible or negative same-day returns (as the cut was already priced in), while surprise decisions generate larger negative reactions.
 
-For post-announcement returns (5 days), cut events show an average positive return of approximately 0.47%, while hike events show average returns near -0.24%, consistent with the transmission mechanism through which rate hikes raise discount rates and reduce equity valuations. The one-month horizon shows more variability, with large positive returns in 2017 and 2019 cut cycles.
+For post-announcement returns (5 days), cut events show an average positive return of approximately +0.17%, while hike events show average returns near 0.00% (flat), consistent with a transmission mechanism in which easier policy supports equity valuations while hikes cap the market's short-term drift. The one-month horizon shows more variability, with large positive returns in 2017 and 2019 cut cycles.
 
 ![Hike vs Cut](images/plot_hike_vs_cut.png)
 ## 8.2 Expected vs. Surprise Decisions
@@ -219,8 +219,8 @@ This finding is consistent with the expectation hypothesis of monetary policy: m
 | --------------- | -------------------- | ------------------ |
 | Expected Policy | Same-Day Return      | 0.40%              |
 | Surprise Policy | Same-Day Return      | \-0.80%            |
-| Rate Cut        | Post-Return (5 days) | 0.47%              |
-| Rate Hike       | Post-Return (5 days) | \-0.24%            |
+| Rate Cut        | Post-Return (5 days) | 0.17%              |
+| Rate Hike       | Post-Return (5 days) | 0.00%              |
 
 ## 8.3 Pre-Announcement Drift
 
@@ -252,7 +252,7 @@ Overall, the evidence suggests that policy days function as high-information, hi
 
 ## 8.7 Summary of Key Findings
 
-- Rate cuts are associated with positive post-announcement returns on average, while rate hikes generate modest negative returns.
+- Rate cuts are associated with positive post-announcement returns on average (+0.17% over 5 days), while rate hikes average roughly flat post-announcement returns.
 - Surprise decisions (where the actual policy diverged from the CPI-implied expectation) produce more negative same-day market reactions than expected decisions.
 - Pre-announcement drift is observable in a majority of events, consistent with partial expectation formation in the days leading up to the policy.
 - High-inflation environments (CPI > 6%) are associated with subdued or negative market reactions even to cuts, as the market may fear future hikes.

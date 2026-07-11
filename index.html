@@ -3,7 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Event study dashboard: how RBI repo rate decisions and inflation expectations move the Nifty 50 across 26 policy events (2015–2025).">
 <title>RBI Monetary Policy & Nifty 50 — Event Study Dashboard</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📊</text></svg>">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -97,6 +99,10 @@
     padding: 0 48px;
     border-bottom: 1px solid var(--border);
     overflow-x: auto;
+    position: sticky;
+    top: 0;
+    background: var(--bg);
+    z-index: 100;
   }
   .tab {
     padding: 20px 24px;
@@ -109,8 +115,9 @@
     white-space: nowrap;
     transition: all 0.2s;
     font-family: 'IBM Plex Mono', monospace;
+    outline: none;
   }
-  .tab:hover { color: var(--text2); }
+  .tab:hover, .tab:focus-visible { color: var(--text2); }
   .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
 
   /* MAIN */
@@ -118,7 +125,11 @@
 
   /* SECTION */
   .section { display: none; }
-  .section.active { display: block; }
+  .section.active { display: block; animation: fadeUp 0.5s cubic-bezier(0.2, 0.7, 0.3, 1) both; }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: none; }
+  }
 
   /* STAT CARDS */
   .stat-grid {
@@ -208,6 +219,32 @@
   .chart-wrap.tall { height: 420px; }
   .chart-wrap.short { height: 240px; }
 
+  /* CONTROLS */
+  .controls-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-bottom: 28px;
+  }
+  .toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 13px;
+    color: var(--text2);
+    cursor: pointer;
+    background: var(--card);
+    border: 1px solid var(--border);
+    padding: 10px 16px;
+    border-radius: 8px;
+    transition: border-color 0.2s, color 0.2s;
+    user-select: none;
+  }
+  .toggle:hover { border-color: var(--accent); color: var(--text); }
+  .toggle input { accent-color: var(--accent); width: 16px; height: 16px; cursor: pointer; }
+  .control-hint { font-size: 12px; color: var(--muted); }
+
   /* EVENT TABLE */
   .table-wrap { overflow-x: auto; margin-top: 12px; }
   table { width: 100%; border-collapse: collapse; font-size: 14px; }
@@ -220,7 +257,13 @@
     color: var(--muted);
     border-bottom: 1px solid var(--border);
     white-space: nowrap;
+    cursor: pointer;
+    user-select: none;
+    transition: color 0.15s;
   }
+  th:hover { color: var(--text2); }
+  th.sorted-asc::after  { content: ' ▲'; color: var(--accent); font-size: 9px; }
+  th.sorted-desc::after { content: ' ▼'; color: var(--accent); font-size: 9px; }
   td {
     padding: 16px;
     border-bottom: 1px solid rgba(255,255,255,0.04);
@@ -349,6 +392,23 @@
     border: 1px solid rgba(240,192,64,0.2);
   }
 
+  /* FOOTER */
+  .footer {
+    border-top: 1px solid var(--border);
+    margin-top: 24px;
+    padding: 28px 48px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+    font-size: 13px;
+    color: var(--muted);
+    line-height: 1.7;
+  }
+  .footer a { color: var(--accent); text-decoration: none; }
+  .footer a:hover { text-decoration: underline; }
+
   /* SCROLLBAR */
   ::-webkit-scrollbar { width: 8px; height: 8px; }
   ::-webkit-scrollbar-track { background: var(--bg); }
@@ -366,19 +426,19 @@
   <div class="header-meta">
     <div class="meta-chip"><b>26</b> Policy Events</div>
     <div class="meta-chip"><b>2015–2025</b> Period</div>
-    <div class="meta-chip"><b>4</b> Lag Windows</div>
+    <div class="meta-chip"><b>5</b> Return Windows</div>
     <div class="meta-chip"><b>Nifty 50</b> Index</div>
     <div class="meta-chip">CPI + Repo Rate + Market Returns</div>
   </div>
 </div>
 
-<div class="tabs">
-  <div class="tab active" onclick="switchTab('overview')">Overview</div>
-  <div class="tab" onclick="switchTab('eventwindow')">Event Window</div>
-  <div class="tab" onclick="switchTab('surprise')">Expected vs Surprise</div>
-  <div class="tab" onclick="switchTab('lag')">Lag Analysis</div>
-  <div class="tab" onclick="switchTab('events')">Event Table</div>
-  <div class="tab" onclick="switchTab('methodology')">Methodology</div>
+<div class="tabs" role="tablist">
+  <div class="tab active" role="tab" tabindex="0" onclick="switchTab('overview', this)">Overview</div>
+  <div class="tab" role="tab" tabindex="0" onclick="switchTab('eventwindow', this)">Event Window</div>
+  <div class="tab" role="tab" tabindex="0" onclick="switchTab('surprise', this)">Expected vs Surprise</div>
+  <div class="tab" role="tab" tabindex="0" onclick="switchTab('lag', this)">Lag Analysis</div>
+  <div class="tab" role="tab" tabindex="0" onclick="switchTab('events', this)">Event Table</div>
+  <div class="tab" role="tab" tabindex="0" onclick="switchTab('methodology', this)">Methodology</div>
 </div>
 
 <div class="main">
@@ -388,32 +448,32 @@
     <div class="stat-grid">
       <div class="stat-card gold">
         <div class="stat-label">Policy Events</div>
-        <div class="stat-value accent">26</div>
+        <div class="stat-value accent" id="stat-n">26</div>
         <div class="stat-sub">2015–2025</div>
       </div>
       <div class="stat-card green">
         <div class="stat-label">Rate Cuts</div>
-        <div class="stat-value green">18</div>
-        <div class="stat-sub">69% of decisions</div>
+        <div class="stat-value green" id="stat-cuts">—</div>
+        <div class="stat-sub" id="stat-cuts-pct"></div>
       </div>
       <div class="stat-card red">
         <div class="stat-label">Rate Hikes</div>
-        <div class="stat-value red">8</div>
-        <div class="stat-sub">31% of decisions</div>
+        <div class="stat-value red" id="stat-hikes">—</div>
+        <div class="stat-sub" id="stat-hikes-pct"></div>
       </div>
       <div class="stat-card teal">
         <div class="stat-label">Surprise Events</div>
-        <div class="stat-value teal">14</div>
-        <div class="stat-sub">54% were surprises</div>
+        <div class="stat-value teal" id="stat-surp">—</div>
+        <div class="stat-sub" id="stat-surp-pct"></div>
       </div>
       <div class="stat-card blue">
         <div class="stat-label">Avg Same-Day Return</div>
-        <div class="stat-value" style="color:var(--blue); font-size:28px">−0.27%</div>
-        <div class="stat-sub">Slight negative on avg</div>
+        <div class="stat-value" style="color:var(--blue); font-size:28px" id="stat-avgsd">—</div>
+        <div class="stat-sub">Announcement-day average</div>
       </div>
       <div class="stat-card gold">
         <div class="stat-label">Avg Pre-Period Return</div>
-        <div class="stat-value" style="font-size:28px">+0.14%</div>
+        <div class="stat-value" style="font-size:28px" id="stat-avgpre">—</div>
         <div class="stat-sub">5-day pre-announcement</div>
       </div>
     </div>
@@ -421,7 +481,7 @@
     <div class="chart-grid thirds">
       <div class="chart-card">
         <div class="chart-title">Repo Rate & CPI — 2015 to 2025</div>
-        <div class="chart-subtitle">The rate cycle: aggressive cuts through COVID, then a sharp hiking cycle in 2022, now returning to easing</div>
+        <div class="chart-subtitle">The rate cycle: aggressive cuts through COVID, then a sharp hiking cycle in 2022, now returning to easing. Repo rate drawn as steps — each level holds until the next policy meeting.</div>
         <div class="chart-wrap tall"><canvas id="c-ratecpi"></canvas></div>
       </div>
       <div class="chart-card">
@@ -436,7 +496,7 @@
     <div class="chart-grid">
       <div class="chart-card">
         <div class="chart-title">Same-Day Nifty Return per Event</div>
-        <div class="chart-subtitle">Green = positive return, Red = negative. Bars annotated by policy type</div>
+        <div class="chart-subtitle">Green = positive return, Red = negative. Hover a bar for the decision, size, and surprise classification</div>
         <div class="chart-wrap tall"><canvas id="c-sameday"></canvas></div>
       </div>
       <div class="chart-card">
@@ -453,41 +513,41 @@
       </div>
       <div class="insight-card teal">
         <div class="insight-head">🎯 Expectations Matter</div>
-        <div class="insight-body">Markets don't wait for RBI. Pre-period returns of −7 to 0 days capture investor positioning BEFORE the decision. This expectation channel is entirely absent from existing literature.</div>
+        <div class="insight-body">Markets don't wait for RBI. Pre-period returns over days −5 to −1 capture investor positioning BEFORE the decision. This expectation channel is entirely absent from existing literature.</div>
       </div>
       <div class="insight-card red">
         <div class="insight-head">⚡ Surprise Premium</div>
-        <div class="insight-body">Surprise decisions (CPI signal mismatched with actual decision) generate larger same-day absolute returns than expected decisions — consistent with EMH that only new information moves prices.</div>
+        <div class="insight-body">Surprise decisions (CPI signal mismatched with actual decision) average <b id="ins-surp-avg1" style="color:var(--red)"></b> on announcement day versus <b id="ins-exp-avg1" style="color:var(--green)"></b> for expected ones — consistent with EMH that only new information moves prices.</div>
       </div>
       <div class="insight-card blue">
         <div class="insight-head">📈 Short vs Long Term</div>
-        <div class="insight-body">Report 2 found no significant immediate (15-day window) effect. This study's lag analysis (Day 0, +7, +15, +30) reveals the distinction between panic and recovery that emerges over time.</div>
+        <div class="insight-body">Report 2 found no significant immediate (15-day window) effect. This study's multi-window design (Day −5 through +1 month) separates the announcement shock from the medium-term drift that emerges over time.</div>
       </div>
     </div>
   </div>
 
   <div class="section" id="tab-eventwindow">
-    <div class="section-label">Event Window Analysis — −7 to +30 Days</div>
+    <div class="section-label">Event Window Analysis — Day −5 to +1 Month</div>
     <div class="stat-grid">
       <div class="stat-card gold">
-        <div class="stat-label">Avg Pre-Return (−7 to 0)</div>
-        <div class="stat-value" style="font-size:28px; color:var(--accent)">+0.14%</div>
+        <div class="stat-label">Avg Pre-Return (−5 to −1)</div>
+        <div class="stat-value" style="font-size:28px; color:var(--accent)" id="stat-w-pre">—</div>
         <div class="stat-sub">Expectation pricing phase</div>
       </div>
       <div class="stat-card red">
         <div class="stat-label">Avg Same-Day Return</div>
-        <div class="stat-value red" style="font-size:28px">−0.27%</div>
+        <div class="stat-value red" style="font-size:28px" id="stat-w-sd">—</div>
         <div class="stat-sub">Announcement day</div>
       </div>
       <div class="stat-card teal">
-        <div class="stat-label">Avg Post-Return (0 to +7)</div>
-        <div class="stat-value teal" style="font-size:28px">+0.19%</div>
+        <div class="stat-label">Avg Post-Return (+1 to +5)</div>
+        <div class="stat-value teal" style="font-size:28px" id="stat-w-post">—</div>
         <div class="stat-sub">Short-term reaction phase</div>
       </div>
       <div class="stat-card blue">
-        <div class="stat-label">Avg Month Return (+30)</div>
-        <div class="stat-value" style="font-size:28px; color:var(--blue)">+1.14%</div>
-        <div class="stat-sub">Long-term drift</div>
+        <div class="stat-label">Avg 1-Month Return</div>
+        <div class="stat-value" style="font-size:28px; color:var(--blue)" id="stat-w-month">—</div>
+        <div class="stat-sub">Medium-term drift (~20 trading days)</div>
       </div>
     </div>
 
@@ -502,7 +562,7 @@
     <div class="chart-grid">
       <div class="chart-card">
         <div class="chart-title">Pre vs Post Return — All Events</div>
-        <div class="chart-subtitle">Comparing the 5-day pre-period return to the 7-day post-period return per event. Is there reversal?</div>
+        <div class="chart-subtitle">Comparing the 5-day pre-period return to the 5-day post-period return per event. Is there reversal?</div>
         <div class="chart-wrap tall"><canvas id="c-prepost"></canvas></div>
       </div>
       <div class="chart-card">
@@ -515,11 +575,11 @@
     <div class="insight-grid">
       <div class="insight-card">
         <div class="insight-head">📊 Key Finding: Pre-Period Evidence</div>
-        <div class="insight-body">The average pre-period return is positive (+0.14%), but this masks volatility. Looking at individual events, you can see markets often move in the OPPOSITE direction of the eventual decision — consistent with the "buy the rumour, sell the news" pattern.</div>
+        <div class="insight-body">The average pre-period return is positive (<b id="ins-avgpre" style="color:var(--accent)"></b>), but this masks volatility. Looking at individual events, you can see markets often move in the OPPOSITE direction of the eventual decision — consistent with the "buy the rumour, sell the news" pattern.</div>
       </div>
       <div class="insight-card teal">
         <div class="insight-head">🔄 Post-Period Recovery</div>
-        <div class="insight-body">Average post-return (+0.19%) slightly exceeds same-day return in magnitude, suggesting that after an initial shock, the market partially absorbs and adjusts. This echoes Report 2's finding of no significant 15-day difference.</div>
+        <div class="insight-body">The average post-return (<b id="ins-avgpost" style="color:var(--accent2)"></b>) turns positive after a negative announcement day (<b id="ins-avgsd2" style="color:var(--red)"></b>), suggesting that after the initial shock the market partially absorbs and adjusts. This echoes Report 2's finding of no significant 15-day difference.</div>
       </div>
     </div>
   </div>
@@ -535,35 +595,35 @@
     <div class="stat-grid">
       <div class="stat-card blue">
         <div class="stat-label">Expected Events</div>
-        <div class="stat-value" style="color:var(--expected)">12</div>
+        <div class="stat-value" style="color:var(--expected)" id="stat-exp-n">—</div>
         <div class="stat-sub">CPI aligned with decision</div>
       </div>
       <div class="stat-card gold">
         <div class="stat-label">Surprise Events</div>
-        <div class="stat-value" style="color:var(--surprise)">14</div>
+        <div class="stat-value" style="color:var(--surprise)" id="stat-surp-n">—</div>
         <div class="stat-sub">CPI contradicted decision</div>
       </div>
       <div class="stat-card teal">
-        <div class="stat-label">Avg |Same-Day| Expected</div>
-        <div class="stat-value teal" style="font-size:28px">0.58%</div>
-        <div class="stat-sub">Smaller reaction</div>
+        <div class="stat-label">Avg Same-Day · Expected</div>
+        <div class="stat-value teal" style="font-size:28px" id="stat-exp-avg">—</div>
+        <div class="stat-sub">Mild positive confirmation</div>
       </div>
       <div class="stat-card red">
-        <div class="stat-label">Avg |Same-Day| Surprise</div>
-        <div class="stat-value red" style="font-size:28px">0.84%</div>
-        <div class="stat-sub">Larger reaction (+45%)</div>
+        <div class="stat-label">Avg Same-Day · Surprise</div>
+        <div class="stat-value red" style="font-size:28px" id="stat-surp-avg">—</div>
+        <div class="stat-sub">Disruptive repricing</div>
       </div>
     </div>
 
     <div class="chart-grid">
       <div class="chart-card">
         <div class="chart-title">Same-Day Return: Expected vs Surprise</div>
-        <div class="chart-subtitle">Blue bars = Expected policies (small reaction). Orange bars = Surprise policies (larger reaction). Confirms that only new information moves markets.</div>
+        <div class="chart-subtitle">Blue bars = Expected policies. Orange bars = Surprise policies. Surprise days skew clearly negative — only new information forces repricing.</div>
         <div class="chart-wrap tall"><canvas id="c-surp-sameday"></canvas></div>
       </div>
       <div class="chart-card">
         <div class="chart-title">Absolute Returns Comparison — All Windows</div>
-        <div class="chart-subtitle">Average absolute return at each lag window, split by Expected vs Surprise. Surprises consistently generate larger moves.</div>
+        <div class="chart-subtitle">Average absolute return at each window, split by Expected vs Surprise. Same-day magnitudes are comparable — it is the direction that differs: surprise days skew sharply negative.</div>
         <div class="chart-wrap tall"><canvas id="c-surp-compare"></canvas></div>
       </div>
     </div>
@@ -571,7 +631,7 @@
     <div class="chart-grid full">
       <div class="chart-card">
         <div class="chart-title">Month-Ahead Return by Policy Type × Surprise Classification</div>
-        <div class="chart-subtitle">30-day drift after the announcement, broken out by whether the decision was a hike/cut AND whether it was expected or a surprise</div>
+        <div class="chart-subtitle">1-month drift after the announcement, broken out by whether the decision was a hike/cut AND whether it was expected or a surprise</div>
         <div class="chart-wrap"><canvas id="c-surp-month"></canvas></div>
       </div>
     </div>
@@ -579,7 +639,7 @@
     <div class="insight-grid">
       <div class="insight-card">
         <div class="insight-head">✅ EMH Confirmation</div>
-        <div class="insight-body">Surprise policies generate ~45% larger same-day absolute returns than expected ones. This directly confirms the Efficient Market Hypothesis: only unanticipated information causes repricing.</div>
+        <div class="insight-body">Expected decisions average <b id="ins-exp-avg2" style="color:var(--green)"></b> on announcement day while surprises average <b id="ins-surp-avg2" style="color:var(--red)"></b> — a gap of <b id="ins-gap" style="color:var(--accent)"></b> percentage points. This directly supports the Efficient Market Hypothesis: only unanticipated information causes systematic repricing.</div>
       </div>
       <div class="insight-card teal">
         <div class="insight-head">📉 COVID Outlier</div>
@@ -595,10 +655,15 @@
   <div class="section" id="tab-lag">
     <div class="section-label">Lag Analysis — Hike vs Cut Comparison</div>
 
+    <div class="controls-row">
+      <label class="toggle"><input type="checkbox" id="covid-toggle" onchange="toggleCovid(this.checked)"> Exclude Mar 27, 2020 (COVID outlier)</label>
+      <span class="control-hint">The emergency COVID cut distorts averages — toggle to see the clean picture</span>
+    </div>
+
     <div class="chart-grid">
       <div class="chart-card">
         <div class="chart-title">Average Returns by Lag Window — Hikes vs Cuts</div>
-        <div class="chart-subtitle">For each policy type, how does the average Nifty 50 return evolve from Day 0 through +30 days? Short-term panic vs long-term recovery pattern visible here.</div>
+        <div class="chart-subtitle">For each policy type, how does the average Nifty 50 return evolve from the pre-period through +1 month? Short-term panic vs long-term recovery pattern visible here.</div>
         <div class="chart-wrap tall"><canvas id="c-lag-hikevcut"></canvas></div>
       </div>
       <div class="chart-card">
@@ -610,8 +675,8 @@
 
     <div class="chart-grid full">
       <div class="chart-card">
-        <div class="chart-title">30-Day Forward Return Distribution — All Events</div>
-        <div class="chart-subtitle">Each event's month-ahead return, ordered chronologically. COVID outlier (March 2020) is clearly visible. Also shows the 2022 hiking cycle's broad market pressure.</div>
+        <div class="chart-title">1-Month Forward Return Distribution — All Events</div>
+        <div class="chart-subtitle">Each event's month-ahead return, ordered chronologically. COVID outlier (March 2020, gold bar) is clearly visible. Also shows the 2022 hiking cycle's broad market pressure.</div>
         <div class="chart-wrap tall"><canvas id="c-lag-month"></canvas></div>
       </div>
     </div>
@@ -636,7 +701,7 @@
       </div>
       <div class="insight-card teal">
         <div class="insight-head">📆 Long-Term: Mixed Signal</div>
-        <div class="insight-body">By the +30 day mark, both hikes and cuts show high variance. The 30-day return is driven more by macro events (oil prices, global risk) than the rate change itself — consistent with Report 2's weak long-term significance.</div>
+        <div class="insight-body">By the +1 month mark, both hikes and cuts show high variance. The 1-month return is driven more by macro events (oil prices, global risk) than the rate change itself — consistent with Report 2's weak long-term significance.</div>
       </div>
       <div class="insight-card red">
         <div class="insight-head">🔢 Size Matters (Marginally)</div>
@@ -648,22 +713,23 @@
   <div class="section" id="tab-events">
     <div class="section-label">Full Event Dataset — 26 RBI Policy Dates</div>
     <div class="chart-card">
+      <div class="chart-subtitle" style="margin-bottom:8px">Click any column header to sort. Click again to reverse.</div>
       <div class="table-wrap">
         <table id="event-table">
           <thead>
             <tr>
-              <th>Date</th>
-              <th>Repo</th>
-              <th>Change</th>
-              <th>Type</th>
-              <th>CPI</th>
-              <th>CPI Δ</th>
-              <th>Surprise?</th>
-              <th>Pre-5d Ret</th>
-              <th>Day Before</th>
-              <th>Same Day</th>
-              <th>Post-7d Ret</th>
-              <th>Month (+30)</th>
+              <th data-key="date">Date</th>
+              <th data-key="repo">Repo</th>
+              <th data-key="change">Change</th>
+              <th data-key="type">Type</th>
+              <th data-key="cpi">CPI</th>
+              <th data-key="cpiChange">CPI Δ</th>
+              <th data-key="surprise">Surprise?</th>
+              <th data-key="preRet">Pre-5d Ret</th>
+              <th data-key="dayBefore">Day Before</th>
+              <th data-key="sameDay">Same Day</th>
+              <th data-key="postRet">Post-5d Ret</th>
+              <th data-key="monthAdv">Month (+1M)</th>
             </tr>
           </thead>
           <tbody id="event-tbody"></tbody>
@@ -685,14 +751,14 @@
       <div class="method-card">
         <div class="method-num">02</div>
         <div class="method-title">Lag Analysis</div>
-        <div class="method-body">Market returns computed at 4 windows: Day 0 (same day), +7 days, +15 days, +30 days. Pre-period: −5 days and −1 day. Captures short-term panic and long-term drift.</div>
-        <div class="method-tags"><span class="method-tag">Day 0</span><span class="method-tag">+7 Days</span><span class="method-tag">+15 Days</span><span class="method-tag">+30 Days</span></div>
+        <div class="method-body">Market returns computed at 5 windows: 5-day pre (−5 to −1), day before (−1), announcement day (0), 5-day post (+1 to +5), and ~1 month ahead (+20 trading days). Captures expectation formation, announcement shock, and medium-term drift.</div>
+        <div class="method-tags"><span class="method-tag">−5d Pre</span><span class="method-tag">Day 0</span><span class="method-tag">+5d Post</span><span class="method-tag">+1 Month</span></div>
       </div>
       <div class="method-card">
         <div class="method-num">03</div>
         <div class="method-title">Event Window</div>
-        <div class="method-body">RBI policy date as center (Day 0). −7 to 0 = expectation phase. 0 = announcement. 0 to +7 = reaction phase. This captures the "expectations priced in" phenomenon missed by prior studies.</div>
-        <div class="method-tags"><span class="method-tag">−7 to 0</span><span class="method-tag">Day 0</span><span class="method-tag">0 to +7</span></div>
+        <div class="method-body">RBI policy date as center (Day 0). −5 to −1 = expectation phase. 0 = announcement. +1 to +5 = reaction phase. This captures the "expectations priced in" phenomenon missed by prior studies.</div>
+        <div class="method-tags"><span class="method-tag">−5 to −1</span><span class="method-tag">Day 0</span><span class="method-tag">+1 to +5</span></div>
       </div>
       <div class="method-card">
         <div class="method-num">04</div>
@@ -723,7 +789,14 @@
     </div>
   </div>
 
-</div><script>
+</div>
+
+<div class="footer">
+  <span>Data: RBI DBIE (repo rate) · Investing.com (Nifty 50) · MoSPI eSankhyiki (CPI) — 26 policy events, Jan 2015 – Dec 2025</span>
+  <span><a href="RBI_Policy_Nifty50_Report.pdf">Full Report (PDF)</a> · <a href="https://github.com/rohanbeingsocial/repoeffectonmarket">GitHub Repo</a></span>
+</div>
+
+<script>
 // ============================================================
 // DATA
 // ============================================================
@@ -756,8 +829,10 @@ const events = [
   {date:'Dec 5, 2025',  repo:5.25, change:-0.25, type:'Cut', cpi:0.71, cpiChange:-2.11, preRet:-0.0014, postRet:-0.00106, dayBefore:0.0018, sameDay:0.0059, monthAdv:0.016929, surprise:'No'},
 ];
 
+const COVID_DATE = 'Mar 27, 2020';
+
 // ============================================================
-// CHART DEFAULTS
+// CHART DEFAULTS & HELPERS
 // ============================================================
 Chart.defaults.color = '#9090aa';
 Chart.defaults.borderColor = '#252535';
@@ -766,34 +841,112 @@ Chart.defaults.font.size = 13;
 
 const pct = v => (v * 100).toFixed(2) + '%';
 const fmt = v => (v >= 0 ? '+' : '') + (v * 100).toFixed(2) + '%';
+// Axis tick formatter — trims float noise like 0.30000000000000004
+const pctTick = v => Number(parseFloat(v).toFixed(4)) + '%';
+const shortDate = d => d.replace(/, 20(\d\d)$/, " '$1");
+const bps = c => `${c > 0 ? '+' : '−'}${Math.round(Math.abs(c) * 100)} bps`;
+const mean = (arr, f) => arr.reduce((s, e) => s + f(e), 0) / arr.length;
+const put = (id, txt) => { const el = document.getElementById(id); if (el) el.textContent = txt; };
+
+// Emphasised zero line on return axes
+const zeroGrid = {
+  color: ctx => (ctx.tick && ctx.tick.value === 0) ? 'rgba(255,255,255,0.25)' : 'rgba(255,255,255,0.04)'
+};
+
+// Derived groups
+const cuts   = events.filter(e => e.type === 'Cut');
+const hikes  = events.filter(e => e.type === 'Hike');
+const surpEvents = events.filter(e => e.surprise === 'Yes');
+const expEvents  = events.filter(e => e.surprise === 'No');
 
 // ============================================================
-// BUILD TABLE
+// SUMMARY STATS — computed from data, never hardcoded
 // ============================================================
-const tbody = document.getElementById('event-tbody');
-events.forEach(e => {
-  const tr = document.createElement('tr');
-  const sdClass = e.sameDay >= 0 ? 'pos' : 'neg';
-  const preClass = e.preRet >= 0 ? 'pos' : 'neg';
-  const postClass = e.postRet >= 0 ? 'pos' : 'neg';
-  const monthClass = e.monthAdv >= 0 ? 'pos' : 'neg';
-  const dbClass = e.dayBefore >= 0 ? 'pos' : 'neg';
-  tr.innerHTML = `
-    <td>${e.date}</td>
-    <td>${e.repo}%</td>
-    <td>${e.change > 0 ? '+' : ''}${e.change}</td>
-    <td><span class="pill ${e.type.toLowerCase()}">${e.type}</span></td>
-    <td>${e.cpi}%</td>
-    <td class="${e.cpiChange > 0 ? 'pos' : e.cpiChange < 0 ? 'neg' : ''}">${e.cpiChange > 0 ? '+' : ''}${e.cpiChange.toFixed(2)}</td>
-    <td><span class="pill ${e.surprise.toLowerCase()}">${e.surprise}</span></td>
-    <td class="${preClass}">${fmt(e.preRet)}</td>
-    <td class="${dbClass}">${fmt(e.dayBefore)}</td>
-    <td class="${sdClass}">${fmt(e.sameDay)}</td>
-    <td class="${postClass}">${fmt(e.postRet)}</td>
-    <td class="${monthClass}">${fmt(e.monthAdv)}</td>
-  `;
-  tbody.appendChild(tr);
+const avgPre   = mean(events, e => e.preRet);
+const avgDB    = mean(events, e => e.dayBefore);
+const avgSD    = mean(events, e => e.sameDay);
+const avgPost  = mean(events, e => e.postRet);
+const avgMonth = mean(events, e => e.monthAdv);
+const avgSDExp  = mean(expEvents,  e => e.sameDay);
+const avgSDSurp = mean(surpEvents, e => e.sameDay);
+
+put('stat-n', events.length);
+put('stat-cuts', cuts.length);
+put('stat-cuts-pct', Math.round(cuts.length / events.length * 100) + '% of decisions');
+put('stat-hikes', hikes.length);
+put('stat-hikes-pct', Math.round(hikes.length / events.length * 100) + '% of decisions');
+put('stat-surp', surpEvents.length);
+put('stat-surp-pct', Math.round(surpEvents.length / events.length * 100) + '% were surprises');
+put('stat-avgsd', fmt(avgSD));
+put('stat-avgpre', fmt(avgPre));
+
+put('stat-w-pre', fmt(avgPre));
+put('stat-w-sd', fmt(avgSD));
+put('stat-w-post', fmt(avgPost));
+put('stat-w-month', fmt(avgMonth));
+put('ins-avgpre', fmt(avgPre));
+put('ins-avgpost', fmt(avgPost));
+put('ins-avgsd2', fmt(avgSD));
+
+put('stat-exp-n', expEvents.length);
+put('stat-surp-n', surpEvents.length);
+put('stat-exp-avg', fmt(avgSDExp));
+put('stat-surp-avg', fmt(avgSDSurp));
+put('ins-exp-avg1', fmt(avgSDExp));
+put('ins-surp-avg1', fmt(avgSDSurp));
+put('ins-exp-avg2', fmt(avgSDExp));
+put('ins-surp-avg2', fmt(avgSDSurp));
+put('ins-gap', ((avgSDExp - avgSDSurp) * 100).toFixed(1));
+
+// ============================================================
+// EVENT TABLE — sortable
+// ============================================================
+let sortKey = null, sortDir = 1;
+
+function renderTable() {
+  const rows = [...events];
+  if (sortKey) {
+    rows.sort((a, b) => {
+      let va = a[sortKey], vb = b[sortKey];
+      if (sortKey === 'date') { va = new Date(a.date); vb = new Date(b.date); }
+      if (typeof va === 'string') return va.localeCompare(vb) * sortDir;
+      return (va - vb) * sortDir;
+    });
+  }
+  const tbody = document.getElementById('event-tbody');
+  tbody.innerHTML = '';
+  rows.forEach(e => {
+    const tr = document.createElement('tr');
+    const cls = v => v >= 0 ? 'pos' : 'neg';
+    tr.innerHTML = `
+      <td>${e.date}</td>
+      <td>${e.repo}%</td>
+      <td>${e.change > 0 ? '+' : ''}${e.change}</td>
+      <td><span class="pill ${e.type.toLowerCase()}">${e.type}</span></td>
+      <td>${e.cpi}%</td>
+      <td class="${e.cpiChange > 0 ? 'pos' : e.cpiChange < 0 ? 'neg' : ''}">${e.cpiChange > 0 ? '+' : ''}${e.cpiChange.toFixed(2)}</td>
+      <td><span class="pill ${e.surprise.toLowerCase()}">${e.surprise}</span></td>
+      <td class="${cls(e.preRet)}">${fmt(e.preRet)}</td>
+      <td class="${cls(e.dayBefore)}">${fmt(e.dayBefore)}</td>
+      <td class="${cls(e.sameDay)}">${fmt(e.sameDay)}</td>
+      <td class="${cls(e.postRet)}">${fmt(e.postRet)}</td>
+      <td class="${cls(e.monthAdv)}">${fmt(e.monthAdv)}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+document.querySelectorAll('#event-table th').forEach(th => {
+  th.addEventListener('click', () => {
+    const key = th.dataset.key;
+    if (sortKey === key) { sortDir = -sortDir; } else { sortKey = key; sortDir = 1; }
+    document.querySelectorAll('#event-table th').forEach(h => h.classList.remove('sorted-asc', 'sorted-desc'));
+    th.classList.add(sortDir === 1 ? 'sorted-asc' : 'sorted-desc');
+    renderTable();
+  });
 });
+
+renderTable();
 
 // ============================================================
 // COLOUR HELPERS
@@ -805,470 +958,551 @@ const expectedColor = 'rgba(96,144,255,0.85)';
 const accentColor = 'rgba(240,192,64,0.85)';
 const tealColor = 'rgba(93,232,193,0.85)';
 
-function barColors(data, fn) { return data.map(fn); }
+// Per-event tooltip: full date + decision + surprise classification
+const eventTooltip = {
+  title: items => events[items[0].dataIndex].date,
+  label: ctx => {
+    const e = events[ctx.dataIndex];
+    return [
+      `${ctx.dataset.label}: ${fmt(ctx.parsed.y / 100)}`,
+      `${e.type} ${bps(e.change)} · CPI ${e.cpi}%`,
+      e.surprise === 'Yes' ? '⚡ Surprise' : '✓ Expected'
+    ];
+  }
+};
 
 // ============================================================
-// C-RATECPI: Repo + CPI line chart
+// LAZY CHART CREATION — each tab's charts are built (and
+// animate in) the first time the tab is opened
 // ============================================================
-new Chart(document.getElementById('c-ratecpi'), {
-  type: 'line',
-  data: {
-    labels: events.map(e => e.date),
-    datasets: [
-      {
-        label: 'Repo Rate (%)',
-        data: events.map(e => e.repo),
-        borderColor: accentColor,
-        backgroundColor: 'rgba(240,192,64,0.08)',
-        fill: true, tension: 0.3, borderWidth: 2.5,
-        pointRadius: 4, pointBackgroundColor: accentColor, yAxisID: 'y'
-      },
-      {
-        label: 'CPI Inflation (%)',
-        data: events.map(e => e.cpi),
-        borderColor: tealColor,
-        backgroundColor: 'rgba(93,232,193,0.05)',
-        fill: false, tension: 0.3, borderWidth: 2,
-        borderDash: [5,3],
-        pointRadius: 3, pointBackgroundColor: tealColor, yAxisID: 'y'
-      }
-    ]
-  },
-  options: {
-    responsive: true, maintainAspectRatio: false,
-    plugins: { legend: { display: true, labels: { usePointStyle: true, padding: 16 } }, tooltip: { mode: 'index', intersect: false } },
-    scales: {
-      x: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { maxTicksLimit: 8, maxRotation: 45 } },
-      y: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { callback: v => v + '%' } }
-    }
-  }
-});
+const allCharts = [];
+const built = {};
+const chartRefs = {};
 
-// C-DONUT1
-new Chart(document.getElementById('c-donut1'), {
-  type: 'doughnut',
-  data: {
-    labels: ['Rate Cuts (18)', 'Rate Hikes (8)'],
-    datasets: [{ data: [18, 8], backgroundColor: [cutColor, hikeColor], borderWidth: 0, hoverOffset: 4 }]
-  },
-  options: {
-    responsive: true, maintainAspectRatio: false, cutout: '72%',
-    plugins: {
-      legend: { position: 'right', labels: { usePointStyle: true, padding: 14, font: { size: 13 } } },
-      tooltip: { callbacks: { label: ctx => ctx.label } }
-    }
-  }
-});
+function makeChart(id, cfg) {
+  const c = new Chart(document.getElementById(id), cfg);
+  allCharts.push(c);
+  return c;
+}
 
-// C-DONUT2
-new Chart(document.getElementById('c-donut2'), {
-  type: 'doughnut',
-  data: {
-    labels: ['Expected (12)', 'Surprise (14)'],
-    datasets: [{ data: [12, 14], backgroundColor: [expectedColor, surpriseColor], borderWidth: 0, hoverOffset: 4 }]
-  },
-  options: {
-    responsive: true, maintainAspectRatio: false, cutout: '72%',
-    plugins: {
-      legend: { position: 'right', labels: { usePointStyle: true, padding: 14, font: { size: 13 } } },
-    }
-  }
-});
+function ensureCharts(id) {
+  if (built[id] || !builders[id]) return;
+  built[id] = true;
+  builders[id]();
+}
 
-// C-SAMEDAY
-new Chart(document.getElementById('c-sameday'), {
-  type: 'bar',
-  data: {
-    labels: events.map(e => e.date.split(',')[0]),
-    datasets: [{
-      label: 'Same-Day Return',
-      data: events.map(e => parseFloat((e.sameDay * 100).toFixed(3))),
-      backgroundColor: events.map(e => e.sameDay >= 0 ? 'rgba(80,216,138,0.7)' : 'rgba(240,80,96,0.7)'),
-      borderWidth: 0, borderRadius: 3
-    }]
-  },
-  options: {
-    responsive: true, maintainAspectRatio: false,
-    plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => fmt(ctx.raw / 100) } } },
-    scales: {
-      x: { grid: { display: false }, ticks: { maxRotation: 60, font: { size: 11 } } },
-      y: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { callback: v => v + '%' } }
-    }
-  }
-});
-
-// C-SCATTER: CPI vs SameDay
-new Chart(document.getElementById('c-scatter'), {
-  type: 'scatter',
-  data: {
-    datasets: [
-      {
-        label: 'Hike',
-        data: events.filter(e => e.type === 'Hike').map(e => ({ x: e.cpi, y: parseFloat((e.sameDay * 100).toFixed(3)) })),
-        backgroundColor: hikeColor, pointRadius: 7
-      },
-      {
-        label: 'Cut',
-        data: events.filter(e => e.type === 'Cut').map(e => ({ x: e.cpi, y: parseFloat((e.sameDay * 100).toFixed(3)) })),
-        backgroundColor: cutColor, pointRadius: 7
-      }
-    ]
-  },
-  options: {
-    responsive: true, maintainAspectRatio: false,
-    plugins: { legend: { display: true, labels: { usePointStyle: true } } },
-    scales: {
-      x: { title: { display: true, text: 'CPI Inflation (%)', color: '#9090aa' }, grid: { color: 'rgba(255,255,255,0.04)' } },
-      y: { title: { display: true, text: 'Same-Day Return (%)', color: '#9090aa' }, grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { callback: v => v + '%' } }
-    }
-  }
-});
-
-// ============================================================
-// EVENT WINDOW TAB
-// ============================================================
-const avgPre = events.reduce((s,e) => s + e.preRet, 0) / events.length;
-const avgDB  = events.reduce((s,e) => s + e.dayBefore, 0) / events.length;
-const avgSD  = events.reduce((s,e) => s + e.sameDay, 0) / events.length;
-const avgPost = events.reduce((s,e) => s + e.postRet, 0) / events.length;
-const avgMonth = events.reduce((s,e) => s + e.monthAdv, 0) / events.length;
-
-new Chart(document.getElementById('c-window'), {
-  type: 'bar',
-  data: {
-    labels: ['Pre-Period\n(−5 days)', 'Day Before\n(−1 day)', 'Same Day\n(Day 0)', 'Post-Period\n(+7 days)', 'Month Ahead\n(+30 days)'],
-    datasets: [{
-      label: 'Average Nifty 50 Return',
-      data: [avgPre, avgDB, avgSD, avgPost, avgMonth].map(v => parseFloat((v * 100).toFixed(4))),
-      backgroundColor: [
-        'rgba(96,144,255,0.7)',
-        'rgba(240,192,64,0.7)',
-        'rgba(240,80,96,0.7)',
-        'rgba(93,232,193,0.7)',
-        'rgba(80,216,138,0.7)'
-      ],
-      borderWidth: 0, borderRadius: 6
-    }]
-  },
-  options: {
-    responsive: true, maintainAspectRatio: false,
-    plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => fmt(ctx.raw / 100) } } },
-    scales: {
-      x: { grid: { display: false } },
-      y: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { callback: v => v + '%' } }
-    }
-  }
-});
-
-// C-PREPOST
-new Chart(document.getElementById('c-prepost'), {
-  type: 'bar',
-  data: {
-    labels: events.map(e => e.date.split(',')[0]),
-    datasets: [
-      {
-        label: 'Pre-5d Return',
-        data: events.map(e => parseFloat((e.preRet * 100).toFixed(3))),
-        backgroundColor: 'rgba(96,144,255,0.6)', borderWidth: 0, borderRadius: 2
-      },
-      {
-        label: 'Post-7d Return',
-        data: events.map(e => parseFloat((e.postRet * 100).toFixed(3))),
-        backgroundColor: 'rgba(93,232,193,0.6)', borderWidth: 0, borderRadius: 2
-      }
-    ]
-  },
-  options: {
-    responsive: true, maintainAspectRatio: false,
-    plugins: { legend: { display: true, labels: { usePointStyle: true } }, tooltip: { mode: 'index' } },
-    scales: {
-      x: { grid: { display: false }, ticks: { maxRotation: 60, font: { size: 11 } } },
-      y: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { callback: v => v + '%' } }
-    }
-  }
-});
-
-// C-DAYBEFORE
-new Chart(document.getElementById('c-daybefore'), {
-  type: 'bar',
-  data: {
-    labels: events.map(e => e.date.split(',')[0]),
-    datasets: [
-      {
-        label: 'Day Before',
-        data: events.map(e => parseFloat((e.dayBefore * 100).toFixed(3))),
-        backgroundColor: 'rgba(240,192,64,0.6)', borderWidth: 0, borderRadius: 2
-      },
-      {
-        label: 'Same Day',
-        data: events.map(e => parseFloat((e.sameDay * 100).toFixed(3))),
-        backgroundColor: events.map(e => e.sameDay >= 0 ? 'rgba(80,216,138,0.6)' : 'rgba(240,80,96,0.6)'),
-        borderWidth: 0, borderRadius: 2
-      }
-    ]
-  },
-  options: {
-    responsive: true, maintainAspectRatio: false,
-    plugins: { legend: { display: true, labels: { usePointStyle: true } }, tooltip: { mode: 'index' } },
-    scales: {
-      x: { grid: { display: false }, ticks: { maxRotation: 60, font: { size: 11 } } },
-      y: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { callback: v => v + '%' } }
-    }
-  }
-});
-
-// ============================================================
-// SURPRISE TAB
-// ============================================================
-const surpEvents = events.filter(e => e.surprise === 'Yes');
-const expEvents  = events.filter(e => e.surprise === 'No');
-
-const avgAbsSurp  = surpEvents.reduce((s,e) => s + Math.abs(e.sameDay), 0) / surpEvents.length;
-const avgAbsExp   = expEvents.reduce((s,e) => s + Math.abs(e.sameDay), 0) / expEvents.length;
-
-new Chart(document.getElementById('c-surp-sameday'), {
-  type: 'bar',
-  data: {
-    labels: events.map(e => e.date.split(',')[0]),
-    datasets: [{
-      label: 'Same-Day Return',
-      data: events.map(e => parseFloat((e.sameDay * 100).toFixed(3))),
-      backgroundColor: events.map(e => e.surprise === 'Yes' ? surpriseColor : expectedColor),
-      borderWidth: 0, borderRadius: 3
-    }]
-  },
-  options: {
-    responsive: true, maintainAspectRatio: false,
-    plugins: {
-      legend: { display: false },
-      tooltip: { callbacks: { label: ctx => { const e = events[ctx.dataIndex]; return [`Return: ${fmt(e.sameDay)}`, `${e.surprise === 'Yes' ? '⚡ Surprise' : '✓ Expected'}`]; } } }
-    },
-    scales: {
-      x: { grid: { display: false }, ticks: { maxRotation: 60, font: { size: 11 } } },
-      y: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { callback: v => v + '%' } }
-    }
-  }
-});
-
-// C-SURP-COMPARE: grouped bar
-const fields = ['preRet', 'dayBefore', 'sameDay', 'postRet', 'monthAdv'];
-const fieldLabels = ['Pre-5d', 'Day Before', 'Same Day', 'Post-7d', 'Month+30'];
-const avgAbsGroup = (arr, field) => arr.reduce((s,e) => s + Math.abs(e[field]), 0) / arr.length;
-
-new Chart(document.getElementById('c-surp-compare'), {
-  type: 'bar',
-  data: {
-    labels: fieldLabels,
-    datasets: [
-      {
-        label: 'Expected (Abs Avg)',
-        data: fields.map(f => parseFloat((avgAbsGroup(expEvents, f) * 100).toFixed(4))),
-        backgroundColor: expectedColor, borderWidth: 0, borderRadius: 4
-      },
-      {
-        label: 'Surprise (Abs Avg)',
-        data: fields.map(f => parseFloat((avgAbsGroup(surpEvents, f) * 100).toFixed(4))),
-        backgroundColor: surpriseColor, borderWidth: 0, borderRadius: 4
-      }
-    ]
-  },
-  options: {
-    responsive: true, maintainAspectRatio: false,
-    plugins: { legend: { display: true, labels: { usePointStyle: true } } },
-    scales: {
-      x: { grid: { display: false } },
-      y: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { callback: v => v + '%' } }
-    }
-  }
-});
-
-// C-SURP-MONTH: 4 groups
-const hikeSurp  = events.filter(e => e.type === 'Hike' && e.surprise === 'Yes');
-const hikeExp   = events.filter(e => e.type === 'Hike' && e.surprise === 'No');
-const cutSurp   = events.filter(e => e.type === 'Cut'  && e.surprise === 'Yes');
-const cutExp    = events.filter(e => e.type === 'Cut'  && e.surprise === 'No');
-const avgMonth2 = arr => arr.length ? arr.reduce((s,e) => s + e.monthAdv, 0) / arr.length : 0;
-
-new Chart(document.getElementById('c-surp-month'), {
-  type: 'bar',
-  data: {
-    labels: ['Hike + Surprise', 'Hike + Expected', 'Cut + Surprise', 'Cut + Expected'],
-    datasets: [{
-      label: 'Avg 30-Day Return',
-      data: [avgMonth2(hikeSurp), avgMonth2(hikeExp), avgMonth2(cutSurp), avgMonth2(cutExp)].map(v => parseFloat((v*100).toFixed(3))),
-      backgroundColor: [
-        'rgba(240,80,96,0.6)', 'rgba(240,80,96,0.3)',
-        'rgba(80,216,138,0.6)', 'rgba(80,216,138,0.3)'
-      ],
-      borderWidth: 0, borderRadius: 6
-    }]
-  },
-  options: {
-    responsive: true, maintainAspectRatio: false,
-    plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => fmt(ctx.raw / 100) } } },
-    scales: {
-      x: { grid: { display: false } },
-      y: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { callback: v => v + '%' } }
-    }
-  }
-});
-
-// ============================================================
-// LAG TAB
-// ============================================================
-const hikeEvts = events.filter(e => e.type === 'Hike');
-const cutEvts  = events.filter(e => e.type === 'Cut');
-const avgRet   = (arr, f) => arr.reduce((s,e) => s + e[f], 0) / arr.length;
-
+// ---- Lag-window aggregation helpers (shared by Lag tab + toggle) ----
 const lagWindows = ['preRet', 'dayBefore', 'sameDay', 'postRet', 'monthAdv'];
-const lagLabels  = ['Pre-5d', 'Day Before', 'Same Day', 'Post-7d', '+30 Days'];
+const lagLabels  = ['Pre-5d', 'Day Before', 'Same Day', 'Post-5d', '+1 Month'];
+const avgByWindow    = arr => lagWindows.map(f => parseFloat((mean(arr, e => e[f]) * 100).toFixed(4)));
+const avgAbsByWindow = arr => lagWindows.map(f => parseFloat((mean(arr, e => Math.abs(e[f])) * 100).toFixed(4)));
 
-new Chart(document.getElementById('c-lag-hikevcut'), {
-  type: 'line',
-  data: {
-    labels: lagLabels,
-    datasets: [
-      {
-        label: 'Hike (avg return)',
-        data: lagWindows.map(f => parseFloat((avgRet(hikeEvts, f) * 100).toFixed(4))),
-        borderColor: hikeColor, backgroundColor: 'rgba(240,80,96,0.1)', fill: true,
-        tension: 0.4, borderWidth: 2.5, pointRadius: 5
+const builders = {
+
+  // ----------------------------------------------------------
+  overview() {
+    // Repo + CPI — repo drawn as steps (a policy rate holds until the next meeting)
+    makeChart('c-ratecpi', {
+      type: 'line',
+      data: {
+        labels: events.map(e => shortDate(e.date)),
+        datasets: [
+          {
+            label: 'Repo Rate (%)',
+            data: events.map(e => e.repo),
+            borderColor: accentColor,
+            backgroundColor: 'rgba(240,192,64,0.08)',
+            fill: true, stepped: 'after', borderWidth: 2.5,
+            pointRadius: 4, pointBackgroundColor: accentColor, yAxisID: 'y'
+          },
+          {
+            label: 'CPI Inflation (%)',
+            data: events.map(e => e.cpi),
+            borderColor: tealColor,
+            backgroundColor: 'rgba(93,232,193,0.05)',
+            fill: false, tension: 0.3, borderWidth: 2,
+            borderDash: [5,3],
+            pointRadius: 3, pointBackgroundColor: tealColor, yAxisID: 'y'
+          }
+        ]
       },
-      {
-        label: 'Cut (avg return)',
-        data: lagWindows.map(f => parseFloat((avgRet(cutEvts, f) * 100).toFixed(4))),
-        borderColor: cutColor, backgroundColor: 'rgba(80,216,138,0.1)', fill: true,
-        tension: 0.4, borderWidth: 2.5, pointRadius: 5
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: true, labels: { usePointStyle: true, padding: 16 } }, tooltip: { mode: 'index', intersect: false } },
+        scales: {
+          x: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { maxTicksLimit: 8, maxRotation: 45 } },
+          y: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { callback: pctTick } }
+        }
       }
-    ]
-  },
-  options: {
-    responsive: true, maintainAspectRatio: false,
-    plugins: { legend: { display: true, labels: { usePointStyle: true } } },
-    scales: {
-      x: { grid: { color: 'rgba(255,255,255,0.04)' } },
-      y: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { callback: v => v + '%' } }
-    }
-  }
-});
+    });
 
-new Chart(document.getElementById('c-lag-abs'), {
-  type: 'bar',
-  data: {
-    labels: lagLabels,
-    datasets: [
-      {
-        label: '|Hike| avg',
-        data: lagWindows.map(f => parseFloat((hikeEvts.reduce((s,e) => s + Math.abs(e[f]), 0) / hikeEvts.length * 100).toFixed(4))),
-        backgroundColor: 'rgba(240,80,96,0.6)', borderWidth: 0, borderRadius: 4
+    makeChart('c-donut1', {
+      type: 'doughnut',
+      data: {
+        labels: [`Rate Cuts (${cuts.length})`, `Rate Hikes (${hikes.length})`],
+        datasets: [{ data: [cuts.length, hikes.length], backgroundColor: [cutColor, hikeColor], borderWidth: 0, hoverOffset: 4 }]
       },
-      {
-        label: '|Cut| avg',
-        data: lagWindows.map(f => parseFloat((cutEvts.reduce((s,e) => s + Math.abs(e[f]), 0) / cutEvts.length * 100).toFixed(4))),
-        backgroundColor: 'rgba(80,216,138,0.6)', borderWidth: 0, borderRadius: 4
+      options: {
+        responsive: true, maintainAspectRatio: false, cutout: '72%',
+        plugins: {
+          legend: { position: 'right', labels: { usePointStyle: true, padding: 14, font: { size: 13 } } },
+          tooltip: { callbacks: { label: ctx => ctx.label } }
+        }
       }
-    ]
-  },
-  options: {
-    responsive: true, maintainAspectRatio: false,
-    plugins: { legend: { display: true, labels: { usePointStyle: true } } },
-    scales: {
-      x: { grid: { display: false } },
-      y: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { callback: v => v + '%' } }
-    }
-  }
-});
+    });
 
-new Chart(document.getElementById('c-lag-month'), {
-  type: 'bar',
-  data: {
-    labels: events.map(e => e.date.split(',')[0]),
-    datasets: [{
-      label: '30-Day Return',
-      data: events.map(e => parseFloat((e.monthAdv * 100).toFixed(3))),
-      backgroundColor: events.map(e => {
-        if (e.date.includes('2020') && e.change === -0.75) return 'rgba(240,192,64,0.9)';
-        return e.monthAdv >= 0 ? 'rgba(80,216,138,0.65)' : 'rgba(240,80,96,0.65)';
-      }),
-      borderWidth: 0, borderRadius: 3
-    }]
-  },
-  options: {
-    responsive: true, maintainAspectRatio: false,
-    plugins: {
-      legend: { display: false },
-      tooltip: { callbacks: { label: ctx => { const e = events[ctx.dataIndex]; return [`+30d: ${fmt(e.monthAdv)}`, e.type, `CPI: ${e.cpi}%`]; } } }
-    },
-    scales: {
-      x: { grid: { display: false }, ticks: { maxRotation: 60, font: { size: 11 } } },
-      y: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { callback: v => v + '%' } }
-    }
-  }
-});
-
-// C-LAG-SCATTER2
-new Chart(document.getElementById('c-lag-scatter2'), {
-  type: 'scatter',
-  data: {
-    datasets: [
-      {
-        label: 'Hike',
-        data: hikeEvts.map(e => ({ x: parseFloat((e.preRet*100).toFixed(3)), y: parseFloat((e.monthAdv*100).toFixed(3)) })),
-        backgroundColor: hikeColor, pointRadius: 7
+    makeChart('c-donut2', {
+      type: 'doughnut',
+      data: {
+        labels: [`Expected (${expEvents.length})`, `Surprise (${surpEvents.length})`],
+        datasets: [{ data: [expEvents.length, surpEvents.length], backgroundColor: [expectedColor, surpriseColor], borderWidth: 0, hoverOffset: 4 }]
       },
-      {
-        label: 'Cut',
-        data: cutEvts.map(e => ({ x: parseFloat((e.preRet*100).toFixed(3)), y: parseFloat((e.monthAdv*100).toFixed(3)) })),
-        backgroundColor: cutColor, pointRadius: 7
+      options: {
+        responsive: true, maintainAspectRatio: false, cutout: '72%',
+        plugins: {
+          legend: { position: 'right', labels: { usePointStyle: true, padding: 14, font: { size: 13 } } },
+        }
       }
-    ]
-  },
-  options: {
-    responsive: true, maintainAspectRatio: false,
-    plugins: { legend: { display: true, labels: { usePointStyle: true } } },
-    scales: {
-      x: { title: { display: true, text: 'Pre-5d Return (%)', color: '#9090aa' }, grid: { color: 'rgba(255,255,255,0.04)' } },
-      y: { title: { display: true, text: 'Month+30 Return (%)', color: '#9090aa' }, grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { callback: v => v + '%' } }
-    }
-  }
-});
+    });
 
-// C-LAG-MAGNITUDE
-new Chart(document.getElementById('c-lag-magnitude'), {
-  type: 'scatter',
-  data: {
-    datasets: [
-      {
-        label: 'Hike',
-        data: hikeEvts.map(e => ({ x: Math.abs(e.change) * 100, y: parseFloat((e.sameDay*100).toFixed(3)) })),
-        backgroundColor: hikeColor, pointRadius: 7
+    makeChart('c-sameday', {
+      type: 'bar',
+      data: {
+        labels: events.map(e => shortDate(e.date)),
+        datasets: [{
+          label: 'Same-Day Return',
+          data: events.map(e => parseFloat((e.sameDay * 100).toFixed(3))),
+          backgroundColor: events.map(e => e.sameDay >= 0 ? 'rgba(80,216,138,0.7)' : 'rgba(240,80,96,0.7)'),
+          borderWidth: 0, borderRadius: 3
+        }]
       },
-      {
-        label: 'Cut',
-        data: cutEvts.map(e => ({ x: Math.abs(e.change) * 100, y: parseFloat((e.sameDay*100).toFixed(3)) })),
-        backgroundColor: cutColor, pointRadius: 7
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
+        plugins: { legend: { display: false }, tooltip: { callbacks: eventTooltip } },
+        scales: {
+          x: { grid: { display: false }, ticks: { maxRotation: 60, font: { size: 11 } } },
+          y: { grid: zeroGrid, ticks: { callback: pctTick } }
+        }
       }
-    ]
+    });
+
+    makeChart('c-scatter', {
+      type: 'scatter',
+      data: {
+        datasets: [
+          {
+            label: 'Hike',
+            data: hikes.map(e => ({ x: e.cpi, y: parseFloat((e.sameDay * 100).toFixed(3)), d: e.date })),
+            backgroundColor: hikeColor, pointRadius: 7
+          },
+          {
+            label: 'Cut',
+            data: cuts.map(e => ({ x: e.cpi, y: parseFloat((e.sameDay * 100).toFixed(3)), d: e.date })),
+            backgroundColor: cutColor, pointRadius: 7
+          }
+        ]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: { display: true, labels: { usePointStyle: true } },
+          tooltip: { callbacks: { label: ctx => `${ctx.raw.d} — CPI ${ctx.parsed.x}%, ${fmt(ctx.parsed.y / 100)}` } }
+        },
+        scales: {
+          x: { title: { display: true, text: 'CPI Inflation (%)', color: '#9090aa' }, grid: { color: 'rgba(255,255,255,0.04)' } },
+          y: { title: { display: true, text: 'Same-Day Return (%)', color: '#9090aa' }, grid: zeroGrid, ticks: { callback: pctTick } }
+        }
+      }
+    });
   },
-  options: {
-    responsive: true, maintainAspectRatio: false,
-    plugins: { legend: { display: true, labels: { usePointStyle: true } } },
-    scales: {
-      x: { title: { display: true, text: 'Rate Change Magnitude (bps)', color: '#9090aa' }, grid: { color: 'rgba(255,255,255,0.04)' } },
-      y: { title: { display: true, text: 'Same-Day Return (%)', color: '#9090aa' }, grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { callback: v => v + '%' } }
-    }
+
+  // ----------------------------------------------------------
+  eventwindow() {
+    makeChart('c-window', {
+      type: 'bar',
+      data: {
+        labels: [['Pre-Period', '(−5 to −1)'], ['Day Before', '(−1)'], ['Same Day', '(Day 0)'], ['Post-Period', '(+1 to +5)'], ['Month Ahead', '(+1M)']],
+        datasets: [{
+          label: 'Average Nifty 50 Return',
+          data: [avgPre, avgDB, avgSD, avgPost, avgMonth].map(v => parseFloat((v * 100).toFixed(4))),
+          backgroundColor: [
+            'rgba(96,144,255,0.7)',
+            'rgba(240,192,64,0.7)',
+            'rgba(240,80,96,0.7)',
+            'rgba(93,232,193,0.7)',
+            'rgba(80,216,138,0.7)'
+          ],
+          borderWidth: 0, borderRadius: 6
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => fmt(ctx.raw / 100) } } },
+        scales: {
+          x: { grid: { display: false } },
+          y: { grid: zeroGrid, ticks: { callback: pctTick } }
+        }
+      }
+    });
+
+    makeChart('c-prepost', {
+      type: 'bar',
+      data: {
+        labels: events.map(e => shortDate(e.date)),
+        datasets: [
+          {
+            label: 'Pre-5d Return',
+            data: events.map(e => parseFloat((e.preRet * 100).toFixed(3))),
+            backgroundColor: 'rgba(96,144,255,0.6)', borderWidth: 0, borderRadius: 2
+          },
+          {
+            label: 'Post-5d Return',
+            data: events.map(e => parseFloat((e.postRet * 100).toFixed(3))),
+            backgroundColor: 'rgba(93,232,193,0.6)', borderWidth: 0, borderRadius: 2
+          }
+        ]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
+        plugins: { legend: { display: true, labels: { usePointStyle: true } }, tooltip: { callbacks: { title: items => events[items[0].dataIndex].date } } },
+        scales: {
+          x: { grid: { display: false }, ticks: { maxRotation: 60, font: { size: 11 } } },
+          y: { grid: zeroGrid, ticks: { callback: pctTick } }
+        }
+      }
+    });
+
+    makeChart('c-daybefore', {
+      type: 'bar',
+      data: {
+        labels: events.map(e => shortDate(e.date)),
+        datasets: [
+          {
+            label: 'Day Before',
+            data: events.map(e => parseFloat((e.dayBefore * 100).toFixed(3))),
+            backgroundColor: 'rgba(240,192,64,0.6)', borderWidth: 0, borderRadius: 2
+          },
+          {
+            label: 'Same Day',
+            data: events.map(e => parseFloat((e.sameDay * 100).toFixed(3))),
+            backgroundColor: events.map(e => e.sameDay >= 0 ? 'rgba(80,216,138,0.6)' : 'rgba(240,80,96,0.6)'),
+            borderWidth: 0, borderRadius: 2
+          }
+        ]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
+        plugins: { legend: { display: true, labels: { usePointStyle: true } }, tooltip: { callbacks: { title: items => events[items[0].dataIndex].date } } },
+        scales: {
+          x: { grid: { display: false }, ticks: { maxRotation: 60, font: { size: 11 } } },
+          y: { grid: zeroGrid, ticks: { callback: pctTick } }
+        }
+      }
+    });
+  },
+
+  // ----------------------------------------------------------
+  surprise() {
+    makeChart('c-surp-sameday', {
+      type: 'bar',
+      data: {
+        labels: events.map(e => shortDate(e.date)),
+        datasets: [{
+          label: 'Same-Day Return',
+          data: events.map(e => parseFloat((e.sameDay * 100).toFixed(3))),
+          backgroundColor: events.map(e => e.surprise === 'Yes' ? surpriseColor : expectedColor),
+          borderWidth: 0, borderRadius: 3
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
+        plugins: {
+          legend: { display: false },
+          tooltip: { callbacks: eventTooltip }
+        },
+        scales: {
+          x: { grid: { display: false }, ticks: { maxRotation: 60, font: { size: 11 } } },
+          y: { grid: zeroGrid, ticks: { callback: pctTick } }
+        }
+      }
+    });
+
+    makeChart('c-surp-compare', {
+      type: 'bar',
+      data: {
+        labels: lagLabels,
+        datasets: [
+          {
+            label: 'Expected (Abs Avg)',
+            data: avgAbsByWindow(expEvents),
+            backgroundColor: expectedColor, borderWidth: 0, borderRadius: 4
+          },
+          {
+            label: 'Surprise (Abs Avg)',
+            data: avgAbsByWindow(surpEvents),
+            backgroundColor: surpriseColor, borderWidth: 0, borderRadius: 4
+          }
+        ]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: true, labels: { usePointStyle: true } } },
+        scales: {
+          x: { grid: { display: false } },
+          y: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { callback: pctTick } }
+        }
+      }
+    });
+
+    const hikeSurp = events.filter(e => e.type === 'Hike' && e.surprise === 'Yes');
+    const hikeExp  = events.filter(e => e.type === 'Hike' && e.surprise === 'No');
+    const cutSurp  = events.filter(e => e.type === 'Cut'  && e.surprise === 'Yes');
+    const cutExp   = events.filter(e => e.type === 'Cut'  && e.surprise === 'No');
+    const avgMonthOf = arr => arr.length ? mean(arr, e => e.monthAdv) : 0;
+
+    makeChart('c-surp-month', {
+      type: 'bar',
+      data: {
+        labels: ['Hike + Surprise', 'Hike + Expected', 'Cut + Surprise', 'Cut + Expected'],
+        datasets: [{
+          label: 'Avg 1-Month Return',
+          data: [avgMonthOf(hikeSurp), avgMonthOf(hikeExp), avgMonthOf(cutSurp), avgMonthOf(cutExp)].map(v => parseFloat((v * 100).toFixed(3))),
+          backgroundColor: [
+            'rgba(240,80,96,0.6)', 'rgba(240,80,96,0.3)',
+            'rgba(80,216,138,0.6)', 'rgba(80,216,138,0.3)'
+          ],
+          borderWidth: 0, borderRadius: 6
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => fmt(ctx.raw / 100) } } },
+        scales: {
+          x: { grid: { display: false } },
+          y: { grid: zeroGrid, ticks: { callback: pctTick } }
+        }
+      }
+    });
+  },
+
+  // ----------------------------------------------------------
+  lag() {
+    chartRefs.lagLine = makeChart('c-lag-hikevcut', {
+      type: 'line',
+      data: {
+        labels: lagLabels,
+        datasets: [
+          {
+            label: 'Hike (avg return)',
+            data: avgByWindow(hikes),
+            borderColor: hikeColor, backgroundColor: 'rgba(240,80,96,0.1)', fill: true,
+            tension: 0.4, borderWidth: 2.5, pointRadius: 5
+          },
+          {
+            label: 'Cut (avg return)',
+            data: avgByWindow(cuts),
+            borderColor: cutColor, backgroundColor: 'rgba(80,216,138,0.1)', fill: true,
+            tension: 0.4, borderWidth: 2.5, pointRadius: 5
+          }
+        ]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: true, labels: { usePointStyle: true } } },
+        scales: {
+          x: { grid: { color: 'rgba(255,255,255,0.04)' } },
+          y: { grid: zeroGrid, ticks: { callback: pctTick } }
+        }
+      }
+    });
+
+    chartRefs.lagAbs = makeChart('c-lag-abs', {
+      type: 'bar',
+      data: {
+        labels: lagLabels,
+        datasets: [
+          {
+            label: '|Hike| avg',
+            data: avgAbsByWindow(hikes),
+            backgroundColor: 'rgba(240,80,96,0.6)', borderWidth: 0, borderRadius: 4
+          },
+          {
+            label: '|Cut| avg',
+            data: avgAbsByWindow(cuts),
+            backgroundColor: 'rgba(80,216,138,0.6)', borderWidth: 0, borderRadius: 4
+          }
+        ]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: true, labels: { usePointStyle: true } } },
+        scales: {
+          x: { grid: { display: false } },
+          y: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { callback: pctTick } }
+        }
+      }
+    });
+
+    chartRefs.lagMonth = makeChart('c-lag-month', {
+      type: 'bar',
+      data: {
+        labels: events.map(e => shortDate(e.date)),
+        datasets: [{
+          label: '1-Month Return',
+          data: events.map(e => parseFloat((e.monthAdv * 100).toFixed(3))),
+          backgroundColor: events.map(e => {
+            if (e.date === COVID_DATE) return 'rgba(240,192,64,0.9)';
+            return e.monthAdv >= 0 ? 'rgba(80,216,138,0.65)' : 'rgba(240,80,96,0.65)';
+          }),
+          borderWidth: 0, borderRadius: 3
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
+        plugins: {
+          legend: { display: false },
+          tooltip: { callbacks: {
+            title: items => chartRefs.lagMonth._events[items[0].dataIndex].date,
+            label: ctx => {
+              const e = chartRefs.lagMonth._events[ctx.dataIndex];
+              return [`+1M: ${fmt(e.monthAdv)}`, `${e.type} ${bps(e.change)}`, `CPI: ${e.cpi}%`];
+            }
+          } }
+        },
+        scales: {
+          x: { grid: { display: false }, ticks: { maxRotation: 60, font: { size: 11 } } },
+          y: { grid: zeroGrid, ticks: { callback: pctTick } }
+        }
+      }
+    });
+    chartRefs.lagMonth._events = events;
+
+    makeChart('c-lag-scatter2', {
+      type: 'scatter',
+      data: {
+        datasets: [
+          {
+            label: 'Hike',
+            data: hikes.map(e => ({ x: parseFloat((e.preRet * 100).toFixed(3)), y: parseFloat((e.monthAdv * 100).toFixed(3)), d: e.date })),
+            backgroundColor: hikeColor, pointRadius: 7
+          },
+          {
+            label: 'Cut',
+            data: cuts.map(e => ({ x: parseFloat((e.preRet * 100).toFixed(3)), y: parseFloat((e.monthAdv * 100).toFixed(3)), d: e.date })),
+            backgroundColor: cutColor, pointRadius: 7
+          }
+        ]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: { display: true, labels: { usePointStyle: true } },
+          tooltip: { callbacks: { label: ctx => `${ctx.raw.d} — Pre ${fmt(ctx.parsed.x / 100)}, +1M ${fmt(ctx.parsed.y / 100)}` } }
+        },
+        scales: {
+          x: { title: { display: true, text: 'Pre-5d Return (%)', color: '#9090aa' }, grid: zeroGrid },
+          y: { title: { display: true, text: '+1 Month Return (%)', color: '#9090aa' }, grid: zeroGrid, ticks: { callback: pctTick } }
+        }
+      }
+    });
+
+    makeChart('c-lag-magnitude', {
+      type: 'scatter',
+      data: {
+        datasets: [
+          {
+            label: 'Hike',
+            data: hikes.map(e => ({ x: Math.round(Math.abs(e.change) * 100), y: parseFloat((e.sameDay * 100).toFixed(3)), d: e.date })),
+            backgroundColor: hikeColor, pointRadius: 7
+          },
+          {
+            label: 'Cut',
+            data: cuts.map(e => ({ x: Math.round(Math.abs(e.change) * 100), y: parseFloat((e.sameDay * 100).toFixed(3)), d: e.date })),
+            backgroundColor: cutColor, pointRadius: 7
+          }
+        ]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: { display: true, labels: { usePointStyle: true } },
+          tooltip: { callbacks: { label: ctx => `${ctx.raw.d} — ${ctx.parsed.x} bps, ${fmt(ctx.parsed.y / 100)}` } }
+        },
+        scales: {
+          x: { title: { display: true, text: 'Rate Change Magnitude (bps)', color: '#9090aa' }, grid: { color: 'rgba(255,255,255,0.04)' } },
+          y: { title: { display: true, text: 'Same-Day Return (%)', color: '#9090aa' }, grid: zeroGrid, ticks: { callback: pctTick } }
+        }
+      }
+    });
   }
-});
+};
+
+// ============================================================
+// COVID OUTLIER TOGGLE — recomputes the lag-tab aggregates
+// ============================================================
+function toggleCovid(exclude) {
+  const set = exclude ? events.filter(e => e.date !== COVID_DATE) : events;
+  const h = set.filter(e => e.type === 'Hike');
+  const c = set.filter(e => e.type === 'Cut');
+
+  if (chartRefs.lagLine) {
+    chartRefs.lagLine.data.datasets[0].data = avgByWindow(h);
+    chartRefs.lagLine.data.datasets[1].data = avgByWindow(c);
+    chartRefs.lagLine.update();
+  }
+  if (chartRefs.lagAbs) {
+    chartRefs.lagAbs.data.datasets[0].data = avgAbsByWindow(h);
+    chartRefs.lagAbs.data.datasets[1].data = avgAbsByWindow(c);
+    chartRefs.lagAbs.update();
+  }
+  if (chartRefs.lagMonth) {
+    chartRefs.lagMonth._events = set;
+    chartRefs.lagMonth.data.labels = set.map(e => shortDate(e.date));
+    chartRefs.lagMonth.data.datasets[0].data = set.map(e => parseFloat((e.monthAdv * 100).toFixed(3)));
+    chartRefs.lagMonth.data.datasets[0].backgroundColor = set.map(e => {
+      if (e.date === COVID_DATE) return 'rgba(240,192,64,0.9)';
+      return e.monthAdv >= 0 ? 'rgba(80,216,138,0.65)' : 'rgba(240,80,96,0.65)';
+    });
+    chartRefs.lagMonth.update();
+  }
+}
 
 // ============================================================
 // TABS
 // ============================================================
-function switchTab(id) {
+function switchTab(id, el) {
   document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
   document.getElementById('tab-' + id).classList.add('active');
-  event.target.classList.add('active');
+  el.classList.add('active');
+  window.scrollTo(0, 0);
+  ensureCharts(id);
 }
+
+document.querySelectorAll('.tab').forEach(t => {
+  t.addEventListener('keydown', ev => {
+    if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); t.click(); }
+  });
+});
+
+// Build the initially visible tab
+ensureCharts('overview');
+
+// Demo/testing hook: destroy and rebuild all charts so entrance
+// animations replay for the currently active tab
+window.__resetCharts = function () {
+  allCharts.forEach(c => c.destroy());
+  allCharts.length = 0;
+  Object.keys(built).forEach(k => delete built[k]);
+  Object.keys(chartRefs).forEach(k => delete chartRefs[k]);
+  const active = document.querySelector('.section.active').id.replace('tab-', '');
+  ensureCharts(active);
+};
 </script>
 </body>
 </html>
